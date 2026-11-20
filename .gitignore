@@ -1,0 +1,5 @@
+# Files Smarty generates by itself (compiled templates and page cache).
+/demo/templates_c/*
+!/demo/templates_c/.htaccess
+/demo/cache/*
+!/demo/cache/.htaccess
