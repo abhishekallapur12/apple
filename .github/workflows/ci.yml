@@ -1,13 +1,19 @@
-name: CI
+name: CI/CD
 
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   test:
+    name: Run Tests (CI)
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -18,9 +24,39 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Run tests
+      - name: Run unit tests
         run: python -m unittest discover -v
 
-      - name: Deployment CD step
-        if: ${{ always() }}
-        run: echo "Deployment step ran even if tests failed"
+  deploy:
+    name: Deployment (CD)
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Determine environment
+        id: env_check
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "target_env=staging/preview (PR #${{ github.event.pull_request.number }})" >> $GITHUB_OUTPUT
+          else
+            echo "target_env=production (main branch)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Execute CD deployment
+        run: |
+          echo "=========================================="
+          echo "Continuous Deployment (CD) Pipeline"
+          echo "Event: ${{ github.event_name }}"
+          echo "Environment: ${{ steps.env_check.outputs.target_env }}"
+          echo "Commit SHA: ${{ github.sha }}"
+          echo "=========================================="
+          echo "Executing deployment steps..."
+          python -c "import calculator; print('Application verification passed!')"
+          echo "Deployment completed successfully!"
