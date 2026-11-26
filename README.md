@@ -2,6 +2,8 @@
 
 A Python project with an automated CI/CD pipeline built with GitHub Actions.
 
+<!-- Test branch for validating PR CI/CD pipeline -->
+
 ## CI/CD Pipeline
 
 The pipeline runs automatically on:
