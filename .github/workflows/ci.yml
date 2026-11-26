@@ -20,3 +20,7 @@ jobs:
 
       - name: Run tests
         run: python -m unittest discover -v
+
+      - name: Deployment CD step
+        if: ${{ always() }}
+        run: echo "Deployment step ran even if tests failed"
