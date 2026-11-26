@@ -46,6 +46,14 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Simulate Intentional CD Deployment Failure
+        run: |
+          echo "============================================================"
+          echo "❌ INTENTIONAL CD FAILURE TRIGGERED FOR TESTING STATUS/WEBHOOK"
+          echo "============================================================"
+          echo "CI tests passed successfully, but CD deployment has failed."
+          exit 1
+
       - name: Install build tools
         run: |
           python -m pip install --upgrade pip
