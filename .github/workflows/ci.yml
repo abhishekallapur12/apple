@@ -12,6 +12,9 @@ permissions:
   contents: read
 
 jobs:
+  # -----------------------------------------------------------------
+  # 1. CI (Continuous Integration): Test and validate code
+  # -----------------------------------------------------------------
   test:
     name: Run Tests (CI)
     runs-on: ubuntu-latest
@@ -27,8 +30,11 @@ jobs:
       - name: Run unit tests
         run: python -m unittest discover -v
 
+  # -----------------------------------------------------------------
+  # 2. CD (Continuous Delivery): Build, package, verify & release artifact
+  # -----------------------------------------------------------------
   deploy:
-    name: Deployment (CD)
+    name: Build & Package (CD)
     runs-on: ubuntu-latest
     needs: test
     steps:
@@ -40,23 +46,32 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Determine environment
-        id: env_check
+      - name: Install build tools
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "target_env=staging/preview (PR #${{ github.event.pull_request.number }})" >> $GITHUB_OUTPUT
-          else
-            echo "target_env=production (main branch)" >> $GITHUB_OUTPUT
-          fi
+          python -m pip install --upgrade pip
+          python -m pip install build
 
-      - name: Execute CD deployment
+      - name: Build distribution package (Wheel & Source Tarball)
+        run: python -m build
+
+      - name: Verify built package installation
+        run: |
+          python -m pip install dist/*.whl
+          python -c "import calculator; assert calculator.add(10, 20) == 30; print('CD verification passed: 10 + 20 =', calculator.add(10, 20))"
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: apple-calculator-build-${{ github.sha }}
+          path: dist/
+          retention-days: 7
+
+      - name: Continuous Delivery Summary
         run: |
           echo "=========================================="
-          echo "Continuous Deployment (CD) Pipeline"
-          echo "Event: ${{ github.event_name }}"
-          echo "Environment: ${{ steps.env_check.outputs.target_env }}"
+          echo "CD Package & Delivery Build Succeeded"
+          echo "Triggered by: ${{ github.event_name }}"
           echo "Commit SHA: ${{ github.sha }}"
+          echo "Artifacts generated in dist/:"
+          ls -la dist/
           echo "=========================================="
-          echo "Executing deployment steps..."
-          python -c "import calculator; print('Application verification passed!')"
-          echo "Deployment completed successfully!"
